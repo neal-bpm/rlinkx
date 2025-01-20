@@ -1,4 +1,4 @@
-defmodule RlinkxWeb.RemoteBookmarkLive do
+defmodule RlinkxWeb.BookmarkLive do
   use RlinkxWeb, :live_view
 
   def render(assigns) do
