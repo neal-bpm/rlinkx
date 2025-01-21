@@ -36,6 +36,6 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def handle_event("toggle-description", _params, socket) do
-    {:noreply, assign(socket, hide_description?: !socket.assigns.hide_description?)}
+    {:noreply, update(socket, :hide_description?, &(!&1))}
   end
 end
