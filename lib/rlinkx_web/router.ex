@@ -18,6 +18,7 @@ defmodule RlinkxWeb.Router do
     pipe_through :browser
 
     live "/", BookmarkLive
+    live "/bookmarks/:id", BookmarkLive
   end
 
   # Other scopes may use custom stacks.

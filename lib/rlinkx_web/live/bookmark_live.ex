@@ -4,7 +4,6 @@ defmodule RlinkxWeb.BookmarkLive do
   alias Rlinkx.Remote.Bookmark
   alias Rlinkx.Repo
 
-
   def render(assigns) do
     ~H"""
     <div class="flex flex-col shrink-0 w-64 bg-slate-100">
@@ -20,7 +19,11 @@ defmodule RlinkxWeb.BookmarkLive do
           <span class="ml-2 leading-none font-medium text-sm">Bookmarks</span>
         </div>
         <div id="bookmarks-list">
-          <.bookmark_link :for={bookmark <- @bookmarks} bookmark={bookmark} active={bookmark.id == @bookmark.id} />
+          <.bookmark_link
+            :for={bookmark <- @bookmarks}
+            bookmark={bookmark}
+            active={bookmark.id == @bookmark.id}
+          />
         </div>
       </div>
     </div>
@@ -30,8 +33,11 @@ defmodule RlinkxWeb.BookmarkLive do
           <h1 class="text-sm font-bold leading-none">
             #{@bookmark.name}
           </h1>
-          <div class={["bg-[#329200] text-xs leading-none h-3.5", @hide_description? && "text-slate-600"]} phx-click="toggle-description">
-            <%= if @hide_description? do%>
+          <div
+            class={["bg-[#329200] text-xs leading-none h-3.5", @hide_description? && "text-slate-600"]}
+            phx-click="toggle-description"
+          >
+            <%= if @hide_description? do %>
               [Description hidden]
             <% else %>
               {@bookmark.description}
@@ -56,19 +62,27 @@ defmodule RlinkxWeb.BookmarkLive do
         "flex items-center h-8 text-sm pl-8 pr-3",
         (@active && "bg-slate-300") || "hover:bg-slate-300"
       ]}
-      href="#"
+      href={~p"/bookmarks/#{@bookmark}"}
     >
-        <.icon name="hero-hashtag" class="h-4 w-4" />
-        <span class={["ml-2 leading-none", @active && "font-bold"]}>
-          {@bookmark.name}
-        </span>
+      <.icon name="hero-hashtag" class="h-4 w-4" />
+      <span class={["ml-2 leading-none", @active && "font-bold"]}>
+        {@bookmark.name}
+      </span>
     </a>
     """
   end
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     bookmarks = Repo.all(Bookmark)
-    bookmark = List.first(bookmarks)
+
+    bookmark =
+      case Map.fetch(params, "id") do
+        {:ok, id} ->
+          %Room{} = Enum.find(bookmarks, &(to_string(&1.id) == id))
+
+        :error ->
+          List.first(bookmarks)
+      end
 
     {:ok, assign(socket, hide_description?: false, bookmark: bookmark, bookmarks: bookmarks)}
   end
