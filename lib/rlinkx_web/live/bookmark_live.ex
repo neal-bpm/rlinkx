@@ -57,18 +57,18 @@ defmodule RlinkxWeb.BookmarkLive do
 
   defp bookmark_link(assigns) do
     ~H"""
-    <a
+    <.link
       class={[
         "flex items-center h-8 text-sm pl-8 pr-3",
         (@active && "bg-slate-300") || "hover:bg-slate-300"
       ]}
-      href={~p"/bookmarks/#{@bookmark}"}
+      navigate={~p"/bookmarks/#{@bookmark}"}
     >
       <.icon name="hero-hashtag" class="h-4 w-4" />
       <span class={["ml-2 leading-none", @active && "font-bold"]}>
         {@bookmark.name}
       </span>
-    </a>
+    </.link>
     """
   end
 
@@ -78,7 +78,7 @@ defmodule RlinkxWeb.BookmarkLive do
     bookmark =
       case Map.fetch(params, "id") do
         {:ok, id} ->
-          %Room{} = Enum.find(bookmarks, &(to_string(&1.id) == id))
+          %Bookmark{} = Enum.find(bookmarks, &(to_string(&1.id) == id))
 
         :error ->
           List.first(bookmarks)
