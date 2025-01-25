@@ -2,7 +2,7 @@ defmodule RlinkxWeb.BookmarkLive do
   use RlinkxWeb, :live_view
 
   alias Rlinkx.Remote.Bookmark
-  alias Rlinkx.Repo
+  alias Rlinkx.Remote
 
   def render(assigns) do
     ~H"""
@@ -73,7 +73,7 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def mount(params, _session, socket) do
-    bookmarks = Repo.all(Bookmark)
+    bookmarks = Remote.list_bookmarks()
     {:ok, assign(socket, bookmarks: bookmarks)}
   end
 
@@ -87,7 +87,7 @@ defmodule RlinkxWeb.BookmarkLive do
         :error ->
           List.first(bookmarks)
       end
-    {:noreply, assign(socket, hide_topic?: false, room: room)}
+    {:noreply, assign(socket, hide_description?: false, bookmark: bookmark)}
   end
 
   def handle_event("toggle-description", _params, socket) do
