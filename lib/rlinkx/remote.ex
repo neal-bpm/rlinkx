@@ -5,6 +5,4 @@ defmodule Rlinkx.Remote do
   def list_bookmarks() do
     Repo.all(Bookmark)
   end
-
-
 end

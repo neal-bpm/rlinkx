@@ -79,6 +79,7 @@ defmodule RlinkxWeb.BookmarkLive do
 
   def handle_params(params, _uri, socket) do
     bookmarks = socket.assigns.bookmarks
+
     bookmark =
       case Map.fetch(params, "id") do
         {:ok, id} ->
@@ -87,7 +88,13 @@ defmodule RlinkxWeb.BookmarkLive do
         :error ->
           List.first(bookmarks)
       end
-    {:noreply, assign(socket, hide_description?: false, bookmark: bookmark)}
+
+    {:noreply,
+     assign(socket,
+       hide_description?: false,
+       bookmark: bookmark,
+       page_title: "#" <> bookmark.name
+     )}
   end
 
   def handle_event("toggle-description", _params, socket) do
