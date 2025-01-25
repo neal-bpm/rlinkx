@@ -62,7 +62,7 @@ defmodule RlinkxWeb.BookmarkLive do
         "flex items-center h-8 text-sm pl-8 pr-3",
         (@active && "bg-slate-300") || "hover:bg-slate-300"
       ]}
-      navigate={~p"/bookmarks/#{@bookmark}"}
+      patch={~p"/bookmarks/#{@bookmark}"}
     >
       <.icon name="hero-hashtag" class="h-4 w-4" />
       <span class={["ml-2 leading-none", @active && "font-bold"]}>
@@ -74,7 +74,11 @@ defmodule RlinkxWeb.BookmarkLive do
 
   def mount(params, _session, socket) do
     bookmarks = Repo.all(Bookmark)
+    {:ok, assign(socket, bookmarks: bookmarks)}
+  end
 
+  def handle_params(params, _uri, socket) do
+    bookmarks = socket.assigns.bookmarks
     bookmark =
       case Map.fetch(params, "id") do
         {:ok, id} ->
@@ -83,8 +87,7 @@ defmodule RlinkxWeb.BookmarkLive do
         :error ->
           List.first(bookmarks)
       end
-
-    {:ok, assign(socket, hide_description?: false, bookmark: bookmark, bookmarks: bookmarks)}
+    {:noreply, assign(socket, hide_topic?: false, room: room)}
   end
 
   def handle_event("toggle-description", _params, socket) do
