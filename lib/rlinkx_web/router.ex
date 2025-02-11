@@ -19,6 +19,7 @@ defmodule RlinkxWeb.Router do
 
     live "/", BookmarkLive
     live "/bookmarks/:id", BookmarkLive
+    live "/bookmarks/:id/edit", BookmarkLive.Edit
   end
 
   # Other scopes may use custom stacks.

@@ -32,6 +32,12 @@ defmodule RlinkxWeb.BookmarkLive do
         <div class="bg-[#34a200] flex flex-col gap-1.5">
           <h1 class="text-sm font-bold leading-none">
             #{@bookmark.name}
+            <.link
+              class="font-normal text-xs text-blue-600 hover:text-blue-700"
+              navigate={~p"/bookmarks/#{@bookmark}/edit"}
+            >
+              Edit
+            </.link>
           </h1>
           <div
             class={["bg-[#329200] text-xs leading-none h-3.5", @hide_description? && "text-slate-600"]}
@@ -72,7 +78,7 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     bookmarks = Remote.list_bookmarks()
     {:ok, assign(socket, bookmarks: bookmarks)}
   end
