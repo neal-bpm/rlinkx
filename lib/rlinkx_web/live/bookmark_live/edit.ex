@@ -19,9 +19,9 @@ defmodule RlinkxWeb.BookmarkLive.Edit do
       </.header>
 
       <.simple_form for={@form} phx-change="validate-bookmark" phx-submit="save-bookmark">
-        <.input field={@form[:name]} label="Name" />
-        <.input field={@form[:url_link]} label="URL" type="text"/>
-        <.input field={@form[:description]} label="Description" type="text"/>
+        <.input field={@form[:name]} label="Name" phx-debounce/>
+        <.input field={@form[:url_link]} label="URL" type="text" phx-debounce/>
+        <.input field={@form[:description]} label="Description" type="text" phx-debounce/>
         <:actions>
           <.button phx-disable-with="Saving..." class="w-full">Save</.button>
         </:actions>
