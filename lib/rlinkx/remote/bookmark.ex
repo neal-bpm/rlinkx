@@ -16,10 +16,12 @@ defmodule Rlinkx.Remote.Bookmark do
     bookmark
     |> cast(attrs, [:name, :description, :url_link])
     |> validate_required([:name, :url_link])
-    |> validate_format(:name, ~r/\A[a-z0-9-]+\z/)
+    |> validate_format(:name, ~r/\A[A-z0-9-]+\z/)
     |> validate_length(:name, max: 30)
     |> validate_length(:url_link, max: 200)
     |> validate_change(:url_link, &validate_URL/2)
+    |> unsafe_validate_unique(:name, Rlinkx.Repo)
+    |> unique_constraint(:name)
   end
 
   # TO DO use URI new and then current logic
