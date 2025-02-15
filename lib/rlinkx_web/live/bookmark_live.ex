@@ -93,7 +93,7 @@ defmodule RlinkxWeb.BookmarkLive do
         <div class="ml-2">
           <div class="-mt-1">
             <.link class="text-sm font-semibold hover:underline">
-              <span>User</span>
+              <span>{get_username(@insight.user.email)}</span>
             </.link>
             <p class="text-sm">{@insight.body}</p>
           </div>
@@ -152,5 +152,9 @@ defmodule RlinkxWeb.BookmarkLive do
 
   def handle_event("toggle-description", _params, socket) do
     {:noreply, update(socket, :hide_description?, &(!&1))}
+  end
+
+  defp get_username(user_email) do
+    user_email |> String.split("@") |> List.first() |> String.capitalize()
   end
 end

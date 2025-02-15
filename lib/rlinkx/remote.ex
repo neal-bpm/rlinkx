@@ -32,6 +32,7 @@ defmodule Rlinkx.Remote do
     Insight
     |> where([insight], insight.bookmark_id == ^bookmark_id)
     |> order_by([insight], asc: insight.inserted_at, asc: insight.id)
+    |> preload(:user)
     |> Repo.all()
   end
 end
