@@ -1,5 +1,5 @@
 defmodule Rlinkx.Remote do
-  alias Rlinkx.Remote.Bookmark
+  alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Repo
 
   import Ecto.Query
@@ -26,5 +26,12 @@ defmodule Rlinkx.Remote do
     bookmark
     |> Bookmark.changeset(attrs)
     |> Repo.update()
+  end
+
+  def list_insights_in_bookmark(%Bookmark{id: bookmark_id}) do
+    Insight
+    |> where([insight], insight.bookmark_id == ^bookmark_id)
+    |> order_by([insight], asc: insight.inserted_at, asc: insight.id)
+    |> Repo.all()
   end
 end

@@ -19,9 +19,9 @@ defmodule RlinkxWeb.BookmarkLive.Edit do
       </.header>
 
       <.simple_form for={@form} phx-change="validate-bookmark" phx-submit="save-bookmark">
-        <.input field={@form[:name]} label="Name" phx-debounce/>
-        <.input field={@form[:url_link]} label="URL" type="text" phx-debounce/>
-        <.input field={@form[:description]} label="Description" type="text" phx-debounce/>
+        <.input field={@form[:name]} label="Name" phx-debounce />
+        <.input field={@form[:url_link]} label="URL" type="text" phx-debounce />
+        <.input field={@form[:description]} label="Description" type="text" phx-debounce />
         <:actions>
           <.button phx-disable-with="Saving..." class="w-full">Save</.button>
         </:actions>
@@ -55,9 +55,10 @@ defmodule RlinkxWeb.BookmarkLive.Edit do
     case Remote.update_bookmark(socket.assigns.bookmark, bookmark_params) do
       {:ok, bookmark} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Bookmark updated successfully")
-          |> push_navigate(to: ~p"/bookmarks/#{bookmark}")}
+         socket
+         |> put_flash(:info, "Bookmark updated successfully")
+         |> push_navigate(to: ~p"/bookmarks/#{bookmark}")}
+
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
     end

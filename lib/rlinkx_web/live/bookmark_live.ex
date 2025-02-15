@@ -1,7 +1,7 @@
 defmodule RlinkxWeb.BookmarkLive do
   use RlinkxWeb, :live_view
 
-  alias Rlinkx.Remote.Bookmark
+  alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Remote
 
   def render(assigns) do
@@ -76,6 +76,28 @@ defmodule RlinkxWeb.BookmarkLive do
           </li>
         </ul>
       </div>
+      <div class="flex flex-col grow overflow-auto">
+        <.insight :for={insight <- @insights} insight={insight} />
+      </div>
+    </div>
+    """
+  end
+
+  attr :insight, Insight, required: true
+
+  defp insight(assigns) do
+    ~H"""
+    <div class="relative flex px-4 py-3">
+      <div class="h-10 w-10 rounded shrink-0 bg-slate-300">
+      </div>
+        <div class="ml-2">
+          <div class="-mt-1">
+            <.link class="text-sm font-semibold hover:underline">
+              <span>User</span>
+            </.link>
+            <p class="text-sm">{@insight.body}</p>
+          </div>
+        </div>
     </div>
     """
   end
@@ -117,10 +139,13 @@ defmodule RlinkxWeb.BookmarkLive do
           List.first(bookmarks)
       end
 
+    insights = Remote.list_insights_in_bookmark(bookmark)
+
     {:noreply,
      assign(socket,
        hide_description?: false,
        bookmark: bookmark,
+       insights: insights,
        page_title: "#" <> bookmark.name
      )}
   end
