@@ -35,4 +35,14 @@ defmodule Rlinkx.Remote do
     |> preload(:user)
     |> Repo.all()
   end
+
+  def change_insight(message, attrs \\ %{}) do
+    Insight.changeset(message, attrs)
+  end
+
+  def create_insight(bookmark, attrs, user) do
+    %Insight{bookmark: bookmark, user: user}
+    |> Insight.changeset(attrs)
+    |> Repo.insert()
+  end
 end

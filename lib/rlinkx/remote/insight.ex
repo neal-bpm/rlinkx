@@ -5,7 +5,6 @@ defmodule Rlinkx.Remote.Insight do
   alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.Bookmark
 
-
   schema "insights" do
     field :body, :string
     belongs_to :bookmark, Bookmark

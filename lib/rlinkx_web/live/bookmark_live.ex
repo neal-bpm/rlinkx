@@ -79,6 +79,29 @@ defmodule RlinkxWeb.BookmarkLive do
       <div class="flex flex-col grow overflow-auto">
         <.insight :for={insight <- @insights} insight={insight} />
       </div>
+      <div class="h-12 bg-white px-4 pb-4">
+        <.form
+          id="new-insight-form"
+          for={@new_insight_form}
+          phx-change="validate-insight"
+          phx-submit="submit-insight"
+          class="flex items-center border-2 border-slate-300 rounded-sm p-1"
+        >
+          <textarea
+            class="grow text-sm px-3 border-1 border-slate-300 mx-1 resize-none"
+            cols=""
+            id="bookmark-insight-textarea"
+            name={@new_insight_form[:body].name}
+            placeholder={"insight #{@bookmark.name}"}
+            phx-debounce
+            rows="1"
+          >{Phoenix.HTML.Form.normalize_value("textarea", @new_insight_form[:body].value)}
+        </textarea>
+          <button class="shrink flex items-center justify-center h-6 w-6 rounded hover:bg-slate-200">
+            <.icon name="hero-paper-airplane" class="h-4 w-4" />
+          </button>
+        </.form>
+      </div>
     </div>
     """
   end
@@ -88,16 +111,15 @@ defmodule RlinkxWeb.BookmarkLive do
   defp insight(assigns) do
     ~H"""
     <div class="relative flex px-4 py-3">
-      <div class="h-10 w-10 rounded shrink-0 bg-slate-300">
-      </div>
-        <div class="ml-2">
-          <div class="-mt-1">
-            <.link class="text-sm font-semibold hover:underline">
-              <span>{get_username(@insight.user.email)}</span>
-            </.link>
-            <p class="text-sm">{@insight.body}</p>
-          </div>
+      <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
+      <div class="ml-2">
+        <div class="-mt-1">
+          <.link class="text-sm font-semibold hover:underline">
+            <span>{get_username(@insight.user.email)}</span>
+          </.link>
+          <p class="text-sm">{@insight.body}</p>
         </div>
+      </div>
     </div>
     """
   end
@@ -142,16 +164,55 @@ defmodule RlinkxWeb.BookmarkLive do
     insights = Remote.list_insights_in_bookmark(bookmark)
 
     {:noreply,
-     assign(socket,
+     socket
+     |> assign(
        hide_description?: false,
        bookmark: bookmark,
        insights: insights,
        page_title: "#" <> bookmark.name
-     )}
+     )
+     |> assign_insight_form(Remote.change_insight(%Insight{}))
+     |> IO.inspect()}
   end
 
   def handle_event("toggle-description", _params, socket) do
     {:noreply, update(socket, :hide_description?, &(!&1))}
+  end
+
+  def handle_event("validate-insight", %{"insight" => insight_params}, socket) do
+    changeset = Remote.change_insight(%Insight{}, insight_params)
+    {:noreply, assign_insight_form(socket, changeset)}
+  end
+
+  # TO DO insight submit
+  def handle_event("submit-insight", %{"insight" => insight_params}, socket) do
+    # pull out room and user from assigns
+    %{bookmark: bookmark, current_user: current_user} = socket.assigns
+
+    socket =
+      case Remote.create_insight(bookmark, insight_params, current_user) do
+        {:ok, new_insight} ->
+          socket
+          |> update(:insights, &(&1 ++ new_insight))
+          |> assign_insight_form(Remote.change_insight(%Insight{}))
+
+        {:error, changeset} ->
+          assign_insight_form(changeset, socket)
+      end
+
+    {:noreply, socket}
+    # create Insight structure and include room and user
+    # create changeset with body from form
+    # Repo insert
+    # handle succes and error case
+    # success - append the new insight with existing insightns and create new blank form
+    # error - create new blank form
+  end
+
+  def assign_insight_form(socket, changeset) do
+    IO.inspect("assign_insight_form")
+    IO.inspect(changeset)
+    assign(socket, :new_insight_form, to_form(changeset))
   end
 
   defp get_username(user_email) do
