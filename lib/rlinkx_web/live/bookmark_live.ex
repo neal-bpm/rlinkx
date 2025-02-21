@@ -124,6 +124,7 @@ defmodule RlinkxWeb.BookmarkLive do
           <.link class="text-sm font-semibold hover:underline">
             <span>{get_username(@insight.user.email)}</span>
           </.link>
+          <span class="ml-1 text-xs text-gray-500">{message_timestamp(@insight)}</span>
           <p class="text-sm">{@insight.body}</p>
         </div>
       </div>
@@ -228,5 +229,10 @@ defmodule RlinkxWeb.BookmarkLive do
 
   defp get_username(user_email) do
     user_email |> String.split("@") |> List.first() |> String.capitalize()
+  end
+
+  defp message_timestamp(insight) do
+    insight.inserted_at
+    |> Timex.format!("%-l:%M %p", :strftime)
   end
 end
