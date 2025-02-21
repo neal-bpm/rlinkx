@@ -76,8 +76,14 @@ defmodule RlinkxWeb.BookmarkLive do
           </li>
         </ul>
       </div>
-      <div class="flex flex-col grow overflow-auto">
-        <.insight :for={insight <- @insights} insight={insight} />
+      <%!-- TO Do Step 2:  make phx-update as stream at div  --%>
+      <%!-- Add id to the main container --%>
+      <div id="bookmark-insight" class="flex flex-col grow overflow-auto" phx-update="stream">
+        <%!-- Get insights from stream instead of from assigns which returns a tuple with --%>
+
+        <%!-- insight_id, insight. Pass both to function component insight --%>
+
+        <.insight :for={{dom_id, insight} <- @streams.insights} dom_id={dom_id} insight={insight} />
       </div>
       <div class="h-12 bg-white px-4 pb-4">
         <.form
@@ -106,11 +112,12 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
+  attr :dom_id, :string, required: true
   attr :insight, Insight, required: true
 
   defp insight(assigns) do
     ~H"""
-    <div class="relative flex px-4 py-3">
+    <div id={@dom_id} class="relative flex px-4 py-3">
       <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
       <div class="ml-2">
         <div class="-mt-1">
@@ -121,8 +128,7 @@ defmodule RlinkxWeb.BookmarkLive do
         </div>
       </div>
     </div>
-    """
-  end
+    """  end
 
   attr :active, :boolean, required: true
   attr :bookmark, Bookmark, required: true
@@ -168,9 +174,13 @@ defmodule RlinkxWeb.BookmarkLive do
      |> assign(
        hide_description?: false,
        bookmark: bookmark,
-       insights: insights,
+       # TO DO Step 1 - loading insights for each user is overload server.
+       # Dedicate this is browser by streams
+       # move out insights from assigns and pass it as stream in socket
+       # On switching between bookmarks, need to reset the stream
        page_title: "#" <> bookmark.name
      )
+     |> stream(:insights, insights, reset: true)
      |> assign_insight_form(Remote.change_insight(%Insight{}))
      |> IO.inspect()}
   end
@@ -193,7 +203,8 @@ defmodule RlinkxWeb.BookmarkLive do
       case Remote.create_insight(bookmark, insight_params, current_user) do
         {:ok, new_insight} ->
           socket
-          |> update(:insights, &(&1 ++ new_insight))
+          # TO DO replace update assigns with stream insert
+          |> stream_insert(:insights, new_insight)
           |> assign_insight_form(Remote.change_insight(%Insight{}))
 
         {:error, changeset} ->
