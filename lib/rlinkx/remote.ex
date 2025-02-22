@@ -1,4 +1,6 @@
 defmodule Rlinkx.Remote do
+
+  alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Repo
 
@@ -44,5 +46,11 @@ defmodule Rlinkx.Remote do
     %Insight{bookmark: bookmark, user: user}
     |> Insight.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def delete_insight_by_id(id, %User{id: user_id}) do
+    insight = %Insight{user_id: ^user_id} = Repo.get(Insight, id)
+
+    Repo.delete(insight)
   end
 end

@@ -1,6 +1,7 @@
 defmodule RlinkxWeb.BookmarkLive do
   use RlinkxWeb, :live_view
 
+  alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Remote
 
@@ -83,7 +84,7 @@ defmodule RlinkxWeb.BookmarkLive do
 
         <%!-- insight_id, insight. Pass both to function component insight --%>
 
-        <.insight :for={{dom_id, insight} <- @streams.insights} dom_id={dom_id} insight={insight} />
+        <.insight :for={{dom_id, insight} <- @streams.insights} dom_id={dom_id} insight={insight} timezone={@timezone} current_user={@current_user} />
       </div>
       <div class="h-12 bg-white px-4 pb-4">
         <.form
@@ -112,8 +113,10 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
+  attr :current_user, User, required: true
   attr :dom_id, :string, required: true
   attr :insight, Insight, required: true
+  attr :timezone, :string, required: true
 
   defp insight(assigns) do
     ~H"""
@@ -124,12 +127,21 @@ defmodule RlinkxWeb.BookmarkLive do
           <.link class="text-sm font-semibold hover:underline">
             <span>{get_username(@insight.user.email)}</span>
           </.link>
-          <span class="ml-1 text-xs text-gray-500">{message_timestamp(@insight)}</span>
+          <span :if={@timezone} class="ml-1 text-xs text-gray-500">{message_timestamp(@insight, @timezone)}</span>
+          <button :if={@current_user.id == @insight.user_id}
+            class="absolute top-4 right-4 text-red-400 hover:text-red-800 cursor-pointer"
+            data-confirm="Are you sure?"
+            phx-click="delete-insight"
+            phx-value-id={@insight.id}
+            >
+            <.icon name="hero-trash" class="h-4 w-4" />
+          </button>
           <p class="text-sm">{@insight.body}</p>
         </div>
       </div>
     </div>
-    """  end
+    """
+  end
 
   attr :active, :boolean, required: true
   attr :bookmark, Bookmark, required: true
@@ -153,7 +165,11 @@ defmodule RlinkxWeb.BookmarkLive do
 
   def mount(_params, _session, socket) do
     bookmarks = Remote.list_bookmarks()
-    {:ok, assign(socket, bookmarks: bookmarks)}
+
+    timezone = get_connect_params(socket)["timezone"]
+
+    #require IEx, IEx.pry()
+    {:ok, assign(socket, bookmarks: bookmarks, timezone: timezone)}
   end
 
   def handle_params(params, _uri, socket) do
@@ -182,8 +198,7 @@ defmodule RlinkxWeb.BookmarkLive do
        page_title: "#" <> bookmark.name
      )
      |> stream(:insights, insights, reset: true)
-     |> assign_insight_form(Remote.change_insight(%Insight{}))
-     |> IO.inspect()}
+     |> assign_insight_form(Remote.change_insight(%Insight{}))}
   end
 
   def handle_event("toggle-description", _params, socket) do
@@ -221,6 +236,12 @@ defmodule RlinkxWeb.BookmarkLive do
     # error - create new blank form
   end
 
+  def handle_event("delete-insight", %{"id" => id}, socket) do
+    {:ok, insight} = Remote.delete_insight_by_id(id, socket.assigns.current_user)
+
+    {:noreply, stream_delete(socket, :insights, insight)}
+  end
+
   def assign_insight_form(socket, changeset) do
     IO.inspect("assign_insight_form")
     IO.inspect(changeset)
@@ -231,8 +252,9 @@ defmodule RlinkxWeb.BookmarkLive do
     user_email |> String.split("@") |> List.first() |> String.capitalize()
   end
 
-  defp message_timestamp(insight) do
+  defp message_timestamp(insight, timezone) do
     insight.inserted_at
+    |> Timex.Timezone.convert(timezone)
     |> Timex.format!("%-l:%M %p", :strftime)
   end
 end
