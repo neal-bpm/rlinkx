@@ -1,10 +1,11 @@
 defmodule Rlinkx.Remote do
-
   alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Repo
 
   import Ecto.Query
+
+  @pubsub Rlinkx.PubSub
 
   def get_bookmark!(id) do
     Repo.get!(Bookmark, id)
@@ -43,14 +44,29 @@ defmodule Rlinkx.Remote do
   end
 
   def create_insight(bookmark, attrs, user) do
-    %Insight{bookmark: bookmark, user: user}
-    |> Insight.changeset(attrs)
-    |> Repo.insert()
+    with {:ok, insight} <-
+           %Insight{bookmark: bookmark, user: user}
+           |> Insight.changeset(attrs)
+           |> Repo.insert() do
+      Phoenix.PubSub.broadcast!(@pubsub, topic(bookmark.id), {:new_insight, insight})
+    end
   end
 
   def delete_insight_by_id(id, %User{id: user_id}) do
     insight = %Insight{user_id: ^user_id} = Repo.get(Insight, id)
 
     Repo.delete(insight)
+
+    Phoenix.PubSub.broadcast!(@pubsub, topic(insight.bookmark_id), {:insight_deleted, insight})
   end
+
+  def subscribe_to_bookmark(bookmark) do
+    Phoenix.PubSub.subscribe(@pubsub, topic(bookmark.id))
+  end
+
+  def unsubscribe_from_bookmark(bookmark) do
+    Phoenix.PubSub.unsubscribe(@pubsub, topic(bookmark.id))
+  end
+
+  defp topic(bookmark_id), do: "remote_bookmark:#{bookmark_id}"
 end

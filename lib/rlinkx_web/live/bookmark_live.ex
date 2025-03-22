@@ -84,7 +84,13 @@ defmodule RlinkxWeb.BookmarkLive do
 
         <%!-- insight_id, insight. Pass both to function component insight --%>
 
-        <.insight :for={{dom_id, insight} <- @streams.insights} dom_id={dom_id} insight={insight} timezone={@timezone} current_user={@current_user} />
+        <.insight
+          :for={{dom_id, insight} <- @streams.insights}
+          dom_id={dom_id}
+          insight={insight}
+          timezone={@timezone}
+          current_user={@current_user}
+        />
       </div>
       <div class="h-12 bg-white px-4 pb-4">
         <.form
@@ -127,13 +133,16 @@ defmodule RlinkxWeb.BookmarkLive do
           <.link class="text-sm font-semibold hover:underline">
             <span>{get_username(@insight.user.email)}</span>
           </.link>
-          <span :if={@timezone} class="ml-1 text-xs text-gray-500">{message_timestamp(@insight, @timezone)}</span>
-          <button :if={@current_user.id == @insight.user_id}
+          <span :if={@timezone} class="ml-1 text-xs text-gray-500">
+            {message_timestamp(@insight, @timezone)}
+          </span>
+          <button
+            :if={@current_user.id == @insight.user_id}
             class="absolute top-4 right-4 text-red-400 hover:text-red-800 cursor-pointer hidden group-hover:block"
             data-confirm="Are you sure?"
             phx-click="delete-insight"
             phx-value-id={@insight.id}
-            >
+          >
             <.icon name="hero-trash" class="h-4 w-4" />
           </button>
           <p class="text-sm">{@insight.body}</p>
@@ -168,11 +177,13 @@ defmodule RlinkxWeb.BookmarkLive do
 
     timezone = get_connect_params(socket)["timezone"]
 
-    #require IEx, IEx.pry()
+    # require IEx, IEx.pry()
     {:ok, assign(socket, bookmarks: bookmarks, timezone: timezone)}
   end
 
   def handle_params(params, _uri, socket) do
+    if socket.assigns[:bookmark], do: Remote.unsubscribe_from_bookmark(socket.assigns.bookmark)
+
     bookmarks = socket.assigns.bookmarks
 
     bookmark =
@@ -184,6 +195,7 @@ defmodule RlinkxWeb.BookmarkLive do
           List.first(bookmarks)
       end
 
+    Remote.subscribe_to_bookmark(bookmark)
     insights = Remote.list_insights_in_bookmark(bookmark)
 
     {:noreply,
@@ -217,11 +229,8 @@ defmodule RlinkxWeb.BookmarkLive do
 
     socket =
       case Remote.create_insight(bookmark, insight_params, current_user) do
-        {:ok, new_insight} ->
-          socket
-          # TO DO replace update assigns with stream insert
-          |> stream_insert(:insights, new_insight)
-          |> assign_insight_form(Remote.change_insight(%Insight{}))
+        :ok ->
+          assign_insight_form(socket, Remote.change_insight(%Insight{}))
 
         {:error, changeset} ->
           assign_insight_form(changeset, socket)
@@ -237,8 +246,16 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def handle_event("delete-insight", %{"id" => id}, socket) do
-    {:ok, insight} = Remote.delete_insight_by_id(id, socket.assigns.current_user)
+    Remote.delete_insight_by_id(id, socket.assigns.current_user)
 
+    {:noreply, socket}
+  end
+
+  def handle_info({:new_insight, insight}, socket) do
+    {:noreply, stream_insert(socket, :insights, insight)}
+  end
+
+  def handle_info({:delete_insight, insight}, socket) do
     {:noreply, stream_delete(socket, :insights, insight)}
   end
 
