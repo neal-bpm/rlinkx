@@ -120,7 +120,7 @@ defmodule RlinkxWeb.BookmarkLive do
 
   defp insight(assigns) do
     ~H"""
-    <div id={@dom_id} class="relative flex px-4 py-3">
+    <div id={@dom_id} class="group relative flex px-4 py-3">
       <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
       <div class="ml-2">
         <div class="-mt-1">
@@ -129,7 +129,7 @@ defmodule RlinkxWeb.BookmarkLive do
           </.link>
           <span :if={@timezone} class="ml-1 text-xs text-gray-500">{message_timestamp(@insight, @timezone)}</span>
           <button :if={@current_user.id == @insight.user_id}
-            class="absolute top-4 right-4 text-red-400 hover:text-red-800 cursor-pointer"
+            class="absolute top-4 right-4 text-red-400 hover:text-red-800 cursor-pointer hidden group-hover:block"
             data-confirm="Are you sure?"
             phx-click="delete-insight"
             phx-value-id={@insight.id}
