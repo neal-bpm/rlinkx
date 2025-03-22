@@ -79,7 +79,7 @@ defmodule RlinkxWeb.BookmarkLive do
       </div>
       <%!-- TO Do Step 2:  make phx-update as stream at div  --%>
       <%!-- Add id to the main container --%>
-      <div id="bookmark-insight" class="flex flex-col grow overflow-auto" phx-update="stream">
+      <div id="bookmark-insights" class="flex flex-col grow overflow-auto" phx-hook="BookmarkInsights" phx-update="stream">
         <%!-- Get insights from stream instead of from assigns which returns a tuple with --%>
 
         <%!-- insight_id, insight. Pass both to function component insight --%>
@@ -107,6 +107,7 @@ defmodule RlinkxWeb.BookmarkLive do
             name={@new_insight_form[:body].name}
             placeholder={"insight #{@bookmark.name}"}
             phx-debounce
+            phx-hook="RemoteInsightsTextarea"
             rows="1"
           >{Phoenix.HTML.Form.normalize_value("textarea", @new_insight_form[:body].value)}
         </textarea>
@@ -210,7 +211,9 @@ defmodule RlinkxWeb.BookmarkLive do
        page_title: "#" <> bookmark.name
      )
      |> stream(:insights, insights, reset: true)
-     |> assign_insight_form(Remote.change_insight(%Insight{}))}
+     |> assign_insight_form(Remote.change_insight(%Insight{}))
+     |> push_event("scroll_insights_to_bottom", %{})}
+
   end
 
   def handle_event("toggle-description", _params, socket) do
@@ -252,7 +255,11 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def handle_info({:new_insight, insight}, socket) do
-    {:noreply, stream_insert(socket, :insights, insight)}
+    socket =
+      socket
+      |> stream_insert(:insights, insight)
+      |> push_event("scroll_insights_to_bottom", %{})
+    {:noreply, socket}
   end
 
   def handle_info({:delete_insight, insight}, socket) do
