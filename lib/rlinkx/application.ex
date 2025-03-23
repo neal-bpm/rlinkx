@@ -17,6 +17,7 @@ defmodule Rlinkx.Application do
       # Start a worker by calling: Rlinkx.Worker.start_link(arg)
       # {Rlinkx.Worker, arg},
       # Start to serve requests, typically the last entry
+      RlinkxWeb.Presence,
       RlinkxWeb.Endpoint
     ]
 

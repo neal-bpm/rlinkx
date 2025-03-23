@@ -1,9 +1,11 @@
 defmodule RlinkxWeb.BookmarkLive do
   use RlinkxWeb, :live_view
 
+  alias Rlinkx.Accounts
   alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.{Bookmark, Insight}
   alias Rlinkx.Remote
+  alias RlinkxWeb.OnlineUsers
 
   def render(assigns) do
     ~H"""
@@ -25,6 +27,14 @@ defmodule RlinkxWeb.BookmarkLive do
             bookmark={bookmark}
             active={bookmark.id == @bookmark.id}
           />
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="flex items-center h-8 px-3">
+          <span class="ml-2 leading-none font-medium text-sm">Users</span>
+        </div>
+        <div id="users-list">
+          <.user :for={user <- @users} user={user} online={OnlineUsers.online?(@online_users, user.id)} />
         </div>
       </div>
     </div>
@@ -79,7 +89,12 @@ defmodule RlinkxWeb.BookmarkLive do
       </div>
       <%!-- TO Do Step 2:  make phx-update as stream at div  --%>
       <%!-- Add id to the main container --%>
-      <div id="bookmark-insights" class="flex flex-col grow overflow-auto" phx-hook="BookmarkInsights" phx-update="stream">
+      <div
+        id="bookmark-insights"
+        class="flex flex-col grow overflow-auto"
+        phx-hook="BookmarkInsights"
+        phx-update="stream"
+      >
         <%!-- Get insights from stream instead of from assigns which returns a tuple with --%>
 
         <%!-- insight_id, insight. Pass both to function component insight --%>
@@ -173,13 +188,41 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
+  attr :user, User, required: true
+  attr :online, :boolean, default: false
+
+  defp user(assigns) do
+    ~H"""
+    <div class="flex items-center h-8 text-sm pl-8 pr-3">
+      <div class="flex justify-center w-4">
+        <%= if @online do %>
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <% else %>
+          <span class="w-2 h-2 rounded-full border-2 border-gray-500"></span>
+        <% end %>
+      </div>
+      <span class="ml-2 leading-none">{get_username(@user.email)}</span>
+    </div>
+    """
+  end
+
   def mount(_params, _session, socket) do
     bookmarks = Remote.list_bookmarks()
-
+    users = Accounts.list_users()
     timezone = get_connect_params(socket)["timezone"]
 
+    if connected?(socket) do
+      OnlineUsers.track(self(), socket.assigns.current_user)
+    end
+
+    OnlineUsers.subscribe()
     # require IEx, IEx.pry()
-    {:ok, assign(socket, bookmarks: bookmarks, timezone: timezone)}
+
+    socket =
+      socket
+      |> assign(bookmarks: bookmarks, timezone: timezone, users: users)
+      |> assign(online_users: OnlineUsers.list())
+    {:ok, assign(socket, bookmarks: bookmarks, timezone: timezone, users: users)}
   end
 
   def handle_params(params, _uri, socket) do
@@ -213,7 +256,6 @@ defmodule RlinkxWeb.BookmarkLive do
      |> stream(:insights, insights, reset: true)
      |> assign_insight_form(Remote.change_insight(%Insight{}))
      |> push_event("scroll_insights_to_bottom", %{})}
-
   end
 
   def handle_event("toggle-description", _params, socket) do
@@ -259,11 +301,17 @@ defmodule RlinkxWeb.BookmarkLive do
       socket
       |> stream_insert(:insights, insight)
       |> push_event("scroll_insights_to_bottom", %{})
+
     {:noreply, socket}
   end
 
   def handle_info({:delete_insight, insight}, socket) do
     {:noreply, stream_delete(socket, :insights, insight)}
+  end
+
+  def handle_info({:presence_diff, payload: diff}, socket) do
+    online_users = OnlineUsers.update(socket.assigns.online_users, diff)
+    {:noreply, assign(socket, online_users: online_users)}
   end
 
   def assign_insight_form(socket, changeset) do
