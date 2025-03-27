@@ -18,8 +18,8 @@ defmodule RlinkxWeb.BookmarkLive do
         </div>
       </div>
       <div class="mt-4 overflow-auto">
-        <div class="flex items-center h-8 px-3">
-          <span class="ml-2 leading-none font-medium text-sm">Bookmarks</span>
+        <div class="flex items-center h-8 px-3" >
+          <.toggler on_click={toggle_bookmarks()} dom_id="bookmarks-toggler" text="Bookmarks" />
         </div>
         <div id="bookmarks-list">
           <.bookmark_link
@@ -31,7 +31,7 @@ defmodule RlinkxWeb.BookmarkLive do
       </div>
       <div class="mt-4">
         <div class="flex items-center h-8 px-3">
-          <span class="ml-2 leading-none font-medium text-sm">Users</span>
+          <.toggler on_click={toggle_users()} dom_id="users-toggler" text="Users" />
         </div>
         <div id="users-list">
           <.user :for={user <- @users} user={user} online={OnlineUsers.online?(@online_users, user.id)} />
@@ -135,6 +135,26 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
+  attr :dom_id, :string, required: true
+  attr :on_click, JS, required: true
+  attr :text, :string, required: true
+  defp toggler(assigns) do
+  ~H"""
+    <button id={@dom_id} phx-click={@on_click} class="flex items-center grow">
+      <.icon id={@dom_id <> "-chevron-down"} name="hero-chevron-down" class="h-4 w-4" />
+      <.icon
+        id={@dom_id <> "-chevron-right"}
+        name="hero-chevron-right"
+        class="h-4 w-4"
+        style="display:none;"
+      />
+      <span class="ml-2 leading-none font-medium text-sm">
+        {@text}
+      </span>
+    </button>
+  """
+  end
+
   attr :current_user, User, required: true
   attr :dom_id, :string, required: true
   attr :insight, Insight, required: true
@@ -205,6 +225,7 @@ defmodule RlinkxWeb.BookmarkLive do
     </div>
     """
   end
+
 
   def mount(_params, _session, socket) do
     bookmarks = Remote.list_bookmarks()
@@ -329,4 +350,17 @@ defmodule RlinkxWeb.BookmarkLive do
     |> Timex.Timezone.convert(timezone)
     |> Timex.format!("%-l:%M %p", :strftime)
   end
+
+  defp toggle_bookmarks() do
+    JS.toggle(to: "#bookmarks-toggler-chevron-down")
+    |> JS.toggle(to: "#bookmarks-toggler-chevron-right")
+    |> JS.toggle(to: "#bookmarks-list")
+  end
+
+  defp toggle_users() do
+    JS.toggle(to: "#users-toggler-chevron-down")
+    |> JS.toggle(to: "#users-toggler-chevron-right")
+    |> JS.toggle(to: "#users-list")
+  end
+
 end
