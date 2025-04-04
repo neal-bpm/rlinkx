@@ -61,6 +61,7 @@ defmodule RlinkxWeb.Router do
     live_session :require_authenticated_user,
       on_mount: [{RlinkxWeb.UserAuth, :ensure_authenticated}] do
       live "/", BookmarkLive
+      live "/bookmarks", BookmarkLive.Index
       live "/bookmarks/:id", BookmarkLive
       live "/bookmarks/:id/edit", BookmarkLive.Edit
       live "/users/settings", UserSettingsLive, :edit

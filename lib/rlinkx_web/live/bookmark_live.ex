@@ -18,7 +18,7 @@ defmodule RlinkxWeb.BookmarkLive do
         </div>
       </div>
       <div class="mt-4 overflow-auto">
-        <div class="flex items-center h-8 px-3" >
+        <div class="flex items-center h-8 px-3">
           <.toggler on_click={toggle_bookmarks()} dom_id="bookmarks-toggler" text="Bookmarks" />
         </div>
         <div id="bookmarks-list">
@@ -27,6 +27,30 @@ defmodule RlinkxWeb.BookmarkLive do
             bookmark={bookmark}
             active={bookmark.id == @bookmark.id}
           />
+          <div class="relative">
+            <button
+              class="flex items-center peer h-8 text-sm pl-8 pr-3 hover:bg-slate-300 cursor-pointer w-full"
+              phx-click={JS.toggle(to: "#sidebar-bookmarks-menu")}
+            >
+              <.icon name="hero-plus" class="h-4 w-4 relative top-px" />
+              <span class="ml-2 leading-none">Add bookmarks</span>
+            </button>
+
+            <div
+              id="sidebar-bookmarks-menu"
+              class="hidden cursor-default absolute top-8 right-2 bg-white border-slate-200 border py-3 rounded-lg"
+              phx-click-away={JS.hide()}
+            >
+              <div class="w-full text-left">
+                <.link
+                  class="block select-none cursor-pointer whitespace-nowrap text-gray-800 hover:text-white px-6 py-1 block hover:bg-sky-600"
+                  navigate={~p"/bookmarks"}
+                >
+                  Browse bookmarks
+                </.link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="mt-4">
@@ -34,7 +58,11 @@ defmodule RlinkxWeb.BookmarkLive do
           <.toggler on_click={toggle_users()} dom_id="users-toggler" text="Users" />
         </div>
         <div id="users-list">
-          <.user :for={user <- @users} user={user} online={OnlineUsers.online?(@online_users, user.id)} />
+          <.user
+            :for={user <- @users}
+            user={user}
+            online={OnlineUsers.online?(@online_users, user.id)}
+          />
         </div>
       </div>
     </div>
@@ -138,8 +166,9 @@ defmodule RlinkxWeb.BookmarkLive do
   attr :dom_id, :string, required: true
   attr :on_click, JS, required: true
   attr :text, :string, required: true
+
   defp toggler(assigns) do
-  ~H"""
+    ~H"""
     <button id={@dom_id} phx-click={@on_click} class="flex items-center grow">
       <.icon id={@dom_id <> "-chevron-down"} name="hero-chevron-down" class="h-4 w-4" />
       <.icon
@@ -152,7 +181,7 @@ defmodule RlinkxWeb.BookmarkLive do
         {@text}
       </span>
     </button>
-  """
+    """
   end
 
   attr :current_user, User, required: true
@@ -226,7 +255,6 @@ defmodule RlinkxWeb.BookmarkLive do
     """
   end
 
-
   def mount(_params, _session, socket) do
     bookmarks = Remote.list_bookmarks()
     users = Accounts.list_users()
@@ -243,6 +271,7 @@ defmodule RlinkxWeb.BookmarkLive do
       socket
       |> assign(bookmarks: bookmarks, timezone: timezone, users: users)
       |> assign(online_users: OnlineUsers.list())
+
     {:ok, assign(socket, bookmarks: bookmarks, timezone: timezone, users: users)}
   end
 
@@ -362,5 +391,4 @@ defmodule RlinkxWeb.BookmarkLive do
     |> JS.toggle(to: "#users-toggler-chevron-right")
     |> JS.toggle(to: "#users-list")
   end
-
 end

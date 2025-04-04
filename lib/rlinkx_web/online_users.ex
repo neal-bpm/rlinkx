@@ -42,8 +42,8 @@ defmodule RlinkxWeb.OnlineUsers do
         String.to_integer(id),
         length(metas),
         &operation.(&1, length(metas))
-      ) |> IO.inspect
+      )
+      |> IO.inspect()
     end)
   end
-
 end
