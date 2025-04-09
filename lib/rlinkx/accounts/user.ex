@@ -2,6 +2,8 @@ defmodule Rlinkx.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Rlinkx.Remote.{Bookmark, UserBookmark}
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
@@ -9,6 +11,7 @@ defmodule Rlinkx.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
 
+    many_to_many :bookmarks, Bookmark, join_through: UserBookmark
     timestamps(type: :utc_datetime)
   end
 

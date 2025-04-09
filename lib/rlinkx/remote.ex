@@ -1,6 +1,7 @@
 defmodule Rlinkx.Remote do
   alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.{Bookmark, Insight}
+  alias Rlinkx.Remote.UserBookmark
   alias Rlinkx.Repo
 
   import Ecto.Query
@@ -13,6 +14,13 @@ defmodule Rlinkx.Remote do
 
   def list_bookmarks() do
     Repo.all(from Bookmark, order_by: [asc: :name])
+  end
+
+  def list_joined_bookmarks(%User{} = user) do
+    user
+    |> Repo.preload(:bookmarks)
+    |> Map.fetch!(:bookmarks)
+    |> Enum.sort_by(& &1.name)
   end
 
   def change_bookmark(bookmark, attrs \\ %{}) do
@@ -69,4 +77,14 @@ defmodule Rlinkx.Remote do
   end
 
   defp topic(bookmark_id), do: "remote_bookmark:#{bookmark_id}"
+
+  def join_bookmark!(bookmark, user) do
+    Repo.insert!(%UserBookmark{bookmark: bookmark, user: user})
+  end
+
+  def joined?(%Bookmark{} = bookmark, %User{} = user) do
+    Repo.exists?(
+      from ub in UserBookmark, where: ub.bookmark_id == ^bookmark.id and ub.user_id == ^user.id)
+    )
+  end
 end

@@ -135,7 +135,7 @@ defmodule RlinkxWeb.BookmarkLive do
           current_user={@current_user}
         />
       </div>
-      <div class="h-12 bg-white px-4 pb-4">
+      <div :if={@joined?} class="h-12 bg-white px-4 pb-4">
         <.form
           id="new-insight-form"
           for={@new_insight_form}
@@ -256,7 +256,7 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def mount(_params, _session, socket) do
-    bookmarks = Remote.list_bookmarks()
+    bookmarks = Remote.list_joined_bookmarks()
     users = Accounts.list_users()
     timezone = get_connect_params(socket)["timezone"]
 
@@ -296,6 +296,7 @@ defmodule RlinkxWeb.BookmarkLive do
      socket
      |> assign(
        hide_description?: false,
+       joined?: Remote.joined?(bookmark, socket.assigns.current_user)
        bookmark: bookmark,
        # TO DO Step 1 - loading insights for each user is overload server.
        # Dedicate this is browser by streams
@@ -323,6 +324,7 @@ defmodule RlinkxWeb.BookmarkLive do
     %{bookmark: bookmark, current_user: current_user} = socket.assigns
 
     socket =
+    if Remote.joined?(bookmark, current_user) do
       case Remote.create_insight(bookmark, insight_params, current_user) do
         :ok ->
           assign_insight_form(socket, Remote.change_insight(%Insight{}))
@@ -330,6 +332,10 @@ defmodule RlinkxWeb.BookmarkLive do
         {:error, changeset} ->
           assign_insight_form(changeset, socket)
       end
+    else
+      socket
+    end
+
 
     {:noreply, socket}
     # create Insight structure and include room and user

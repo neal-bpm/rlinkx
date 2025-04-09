@@ -10,6 +10,8 @@ defmodule Rlinkx.Remote.Bookmark do
     field :description, :string
     field :url_link, :string
 
+    many_to_many :users, User, join_through: UserBookmark
+
     has_many :insights, Insight
 
     timestamps(type: :utc_datetime)
