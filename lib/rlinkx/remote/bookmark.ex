@@ -3,7 +3,8 @@ defmodule Rlinkx.Remote.Bookmark do
 
   import Ecto.Changeset
 
-  alias Rlinkx.Remote.Insight
+  alias Rlinkx.Remote.{Insight, UserBookmark}
+  alias Rlinkx.Accounts.User
 
   schema "bookmarks" do
     field :name, :string

@@ -23,6 +23,16 @@ defmodule Rlinkx.Remote do
     |> Enum.sort_by(& &1.name)
   end
 
+  def list_bookmarks_with_joined(%User{} = user) do
+    query =
+      from b in Bookmark,
+      left_join: m in UserBookmark,
+      on: b.id == m.bookmark_id and m.user_id == ^user.id,
+      select: {b, not is_nil(m.id)},
+            order_by: [asc: :name]
+    Repo.all(query)
+  end
+
   def change_bookmark(bookmark, attrs \\ %{}) do
     Bookmark.changeset(bookmark, attrs)
   end
@@ -84,7 +94,8 @@ defmodule Rlinkx.Remote do
 
   def joined?(%Bookmark{} = bookmark, %User{} = user) do
     Repo.exists?(
-      from ub in UserBookmark, where: ub.bookmark_id == ^bookmark.id and ub.user_id == ^user.id)
+      from ub in UserBookmark, where: ub.bookmark_id == ^bookmark.id and ub.user_id == ^user.id
     )
   end
+
 end

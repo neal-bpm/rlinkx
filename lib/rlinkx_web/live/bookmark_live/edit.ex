@@ -32,12 +32,24 @@ defmodule RlinkxWeb.BookmarkLive.Edit do
 
   def mount(%{"id" => id}, _session, socket) do
     bookmark = Remote.get_bookmark!(id)
-    changeset = Remote.change_bookmark(bookmark)
+    # changeset = Remote.change_bookmark(bookmark)
 
+    # socket =
+    #   socket
+    #   |> assign(page_title: "Edit remote link", bookmark: bookmark)
+    #   |> assign_form(changeset)
     socket =
-      socket
-      |> assign(page_title: "Edit remote link", bookmark: bookmark)
-      |> assign_form(changeset)
+      if Remote.joined?(bookmark, socket.assigns.current_user) do
+        changeset = Remote.change_bookmark(bookmark)
+
+        socket
+        |> assign(page_title: "Edit remote link", bookmark: bookmark)
+        |> assign_form(changeset)
+      else
+        socket
+        |> put_flash(:error, "Permission denied")
+        |> push_navigate(to: ~p"/")
+      end
 
     {:ok, socket}
   end

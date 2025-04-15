@@ -6,7 +6,6 @@ defmodule Rlinkx.Remote.UserBookmark do
   alias Rlinkx.Remote.Bookmark
 
   schema "user_bookmarks" do
-
     belongs_to :user, User
     belongs_to :bookmark, Bookmark
 

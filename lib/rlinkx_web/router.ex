@@ -58,9 +58,10 @@ defmodule RlinkxWeb.Router do
   scope "/", RlinkxWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    get "/", BookmarkController, :redirect_to_first
+
     live_session :require_authenticated_user,
       on_mount: [{RlinkxWeb.UserAuth, :ensure_authenticated}] do
-      live "/", BookmarkLive
       live "/bookmarks", BookmarkLive.Index
       live "/bookmarks/:id", BookmarkLive
       live "/bookmarks/:id/edit", BookmarkLive.Edit

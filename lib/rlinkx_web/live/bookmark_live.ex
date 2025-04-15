@@ -72,6 +72,7 @@ defmodule RlinkxWeb.BookmarkLive do
           <h1 class="text-sm font-bold leading-none">
             #{@bookmark.name}
             <.link
+              :if={@joined?}
               class="font-normal text-xs text-blue-600 hover:text-blue-700"
               navigate={~p"/bookmarks/#{@bookmark}/edit"}
             >
@@ -158,6 +159,33 @@ defmodule RlinkxWeb.BookmarkLive do
             <.icon name="hero-paper-airplane" class="h-4 w-4" />
           </button>
         </.form>
+      </div>
+      <div
+        :if={!@joined?}
+        class="flex justify-around  mx-5 mb-5 p-6 bg-slate-100 border-slate-300 border rounded-lg"
+      >
+        <div class="max-w-3-x1 text-center">
+          <div class="mb-4">
+            <h1 class="text-x1 font-semibold">#{@bookmark.name}</h1>
+            <div class="flex items-center justify-around">
+              <button
+                phx-click="join-room"
+                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Join Bookmark
+              </button>
+            </div>
+            <div class="mt-4">
+              <.link
+                navigate={~p"/bookmarks"}
+                href="#"
+                class="text-sm text-slate-500 underline hover:text-slate-600"
+              >
+                Back to All bookmarks
+              </.link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -256,7 +284,7 @@ defmodule RlinkxWeb.BookmarkLive do
   end
 
   def mount(_params, _session, socket) do
-    bookmarks = Remote.list_joined_bookmarks()
+    bookmarks = Remote.list_joined_bookmarks(socket.assigns.current_user)
     users = Accounts.list_users()
     timezone = get_connect_params(socket)["timezone"]
 
@@ -281,13 +309,7 @@ defmodule RlinkxWeb.BookmarkLive do
     bookmarks = socket.assigns.bookmarks
 
     bookmark =
-      case Map.fetch(params, "id") do
-        {:ok, id} ->
-          %Bookmark{} = Enum.find(bookmarks, &(to_string(&1.id) == id))
-
-        :error ->
-          List.first(bookmarks)
-      end
+      params |> Map.fetch!("id") |> Remote.get_bookmark!()
 
     Remote.subscribe_to_bookmark(bookmark)
     insights = Remote.list_insights_in_bookmark(bookmark)
@@ -296,7 +318,7 @@ defmodule RlinkxWeb.BookmarkLive do
      socket
      |> assign(
        hide_description?: false,
-       joined?: Remote.joined?(bookmark, socket.assigns.current_user)
+       joined?: Remote.joined?(bookmark, socket.assigns.current_user),
        bookmark: bookmark,
        # TO DO Step 1 - loading insights for each user is overload server.
        # Dedicate this is browser by streams
@@ -324,18 +346,17 @@ defmodule RlinkxWeb.BookmarkLive do
     %{bookmark: bookmark, current_user: current_user} = socket.assigns
 
     socket =
-    if Remote.joined?(bookmark, current_user) do
-      case Remote.create_insight(bookmark, insight_params, current_user) do
-        :ok ->
-          assign_insight_form(socket, Remote.change_insight(%Insight{}))
+      if Remote.joined?(bookmark, current_user) do
+        case Remote.create_insight(bookmark, insight_params, current_user) do
+          :ok ->
+            assign_insight_form(socket, Remote.change_insight(%Insight{}))
 
-        {:error, changeset} ->
-          assign_insight_form(changeset, socket)
+          {:error, changeset} ->
+            assign_insight_form(changeset, socket)
+        end
+      else
+        socket
       end
-    else
-      socket
-    end
-
 
     {:noreply, socket}
     # create Insight structure and include room and user
@@ -349,6 +370,14 @@ defmodule RlinkxWeb.BookmarkLive do
   def handle_event("delete-insight", %{"id" => id}, socket) do
     Remote.delete_insight_by_id(id, socket.assigns.current_user)
 
+    {:noreply, socket}
+  end
+
+  def handle_event("join-room", _, socket) do
+    current_user = socket.assigns.current_user
+    Remote.join_bookmark!(socket.assigns.bookmark, current_user)
+    Remote.subscribe_to_bookmark(socket.assigns.bookmark)
+    socket = assign(socket, joined?: true, bookmarks: Remote.list_joined_bookmarks(current_user))
     {:noreply, socket}
   end
 
