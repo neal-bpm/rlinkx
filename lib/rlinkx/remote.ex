@@ -26,10 +26,11 @@ defmodule Rlinkx.Remote do
   def list_bookmarks_with_joined(%User{} = user) do
     query =
       from b in Bookmark,
-      left_join: m in UserBookmark,
-      on: b.id == m.bookmark_id and m.user_id == ^user.id,
-      select: {b, not is_nil(m.id)},
-            order_by: [asc: :name]
+        left_join: m in UserBookmark,
+        on: b.id == m.bookmark_id and m.user_id == ^user.id,
+        select: {b, not is_nil(m.id)},
+        order_by: [asc: :name]
+
     Repo.all(query)
   end
 
@@ -98,4 +99,15 @@ defmodule Rlinkx.Remote do
     )
   end
 
+  def toggle_bookmark_membership(bookmark, user) do
+    case Repo.get_by(UserBookmark, bookmark_id: bookmark.id, user_id: user.id) do
+      %UserBookmark{} = user_bookmark ->
+        Repo.delete(user_bookmark)
+        {bookmark, false}
+
+      nil ->
+        join_bookmark!(bookmark, user)
+        {bookmark, true}
+    end
+  end
 end
