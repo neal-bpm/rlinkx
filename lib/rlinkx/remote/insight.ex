@@ -4,6 +4,7 @@ defmodule Rlinkx.Remote.Insight do
 
   alias Rlinkx.Accounts.User
   alias Rlinkx.Remote.Bookmark
+  alias Rlinkx.Remote.Insight
 
   schema "insights" do
     field :body, :string
@@ -19,4 +20,5 @@ defmodule Rlinkx.Remote.Insight do
     |> cast(attrs, [:body])
     |> validate_required([:body])
   end
+
 end

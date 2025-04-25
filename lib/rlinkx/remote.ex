@@ -100,7 +100,7 @@ defmodule Rlinkx.Remote do
   end
 
   def toggle_bookmark_membership(bookmark, user) do
-    case Repo.get_by(UserBookmark, bookmark_id: bookmark.id, user_id: user.id) do
+    case get_user_bookmark(bookmark, user) do
       %UserBookmark{} = user_bookmark ->
         Repo.delete(user_bookmark)
         {bookmark, false}
@@ -108,6 +108,34 @@ defmodule Rlinkx.Remote do
       nil ->
         join_bookmark!(bookmark, user)
         {bookmark, true}
+    end
+  end
+
+  defp get_user_bookmark(bookmark, user) do
+    Repo.get_by(UserBookmark, bookmark_id: bookmark.id, user_id: user.id)
+  end
+
+  def update_last_read_at(bookmark, user) do
+    case get_user_bookmark(bookmark, user) do
+      %UserBookmark{} = user_bookmark ->
+        timestamp =
+          from(i in Insight, where: i.bookmark_id == ^bookmark.id, select: max(i.inserted_at))
+          |> Repo.one()
+
+        user_bookmark |> UserBookmark.add_last_read_at_change(timestamp) |> Repo.update()
+
+      nil ->
+        nil
+    end
+  end
+
+  def get_last_read_at(%Bookmark{} = bookmark, user) do
+    case get_user_bookmark(bookmark, user) do
+      %UserBookmark{} = user_bookmark ->
+        user_bookmark.last_read_at
+
+      nil ->
+        nil
     end
   end
 end

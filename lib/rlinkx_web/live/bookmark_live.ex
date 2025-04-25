@@ -220,7 +220,7 @@ defmodule RlinkxWeb.BookmarkLive do
   defp insight(assigns) do
     ~H"""
     <div id={@dom_id} class="group relative flex px-4 py-3">
-      <div class="h-10 w-10 rounded shrink-0 bg-slate-300"></div>
+      <img class="h-10 w-10 rounded shrink-0" src={~p"/images/one_ring.jpg"} />
       <div class="ml-2">
         <div class="-mt-1">
           <.link class="text-sm font-semibold hover:underline">
@@ -311,8 +311,14 @@ defmodule RlinkxWeb.BookmarkLive do
     bookmark =
       params |> Map.fetch!("id") |> Remote.get_bookmark!()
 
+    last_read_at = Remote.get_last_read_at(bookmark, socket.assigns.current_user)
+
     Remote.subscribe_to_bookmark(bookmark)
-    insights = Remote.list_insights_in_bookmark(bookmark)
+    Remote.update_last_read_at(bookmark, socket.assigns.current_user)
+    insights =
+    bookmark
+    |> Remote.list_insights_in_bookmark()
+    |> maybe_insert_unread_marker(last_read_at)
 
     {:noreply,
      socket
@@ -426,4 +432,21 @@ defmodule RlinkxWeb.BookmarkLive do
     |> JS.toggle(to: "#users-toggler-chevron-right")
     |> JS.toggle(to: "#users-list")
   end
+
+  defp maybe_insert_unread_marker(insights, nil) do
+    insights
+  end
+
+  defp maybe_insert_unread_marker(insights, last_read_at) do
+    {read, unread} = Enum.split_while(insights, &
+    (DateTime.compare(&1.inserted_at, last_read_at) != :gt))
+
+    if unread == [] do
+      read
+    else
+      read ++ [:unread_marker | unread]
+    end
+  end
+
+
 end

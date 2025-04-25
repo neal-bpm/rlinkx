@@ -57,7 +57,7 @@ defmodule RlinkxWeb.BookmarkLive.Index do
     """
   end
 
-  defp open_room(room) do
+  defp open_bookmark(bookmark) do
     JS.navigate(~p"/bookmarks/#{bookmark}")
   end
 
@@ -74,11 +74,11 @@ defmodule RlinkxWeb.BookmarkLive.Index do
   end
 
   def handle_event("toggle-bookmark-membership", %{"id" => id}, socket) do
-    {bookmark, joined} =
+    {bookmark, joined?} =
       id
       |> Remote.get_bookmark!()
       |> Remote.toggle_bookmark_membership(socket.assigns.current_user)
 
-      {:noreply, stream_insert(socket, :bookmarks, {bookmark, joined?})}
+    {:noreply, stream_insert(socket, :bookmarks, {bookmark, joined?})}
   end
 end
